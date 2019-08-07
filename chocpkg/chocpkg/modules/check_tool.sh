@@ -4,7 +4,7 @@ check_tool::init() {
 }
 
 # Function that returns true if the package is installed.
-check_installed() {
-    have_tool "$PACKAGE_INSTALLED_TOOL"
+do_check() {
+    chocpkg::have_tool "$PACKAGE_INSTALLED_TOOL"
 }
 

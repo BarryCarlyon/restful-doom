@@ -2,8 +2,8 @@ description "Simple DirectMedia Layer"
 check_pkgconfig sdl2
 
 variant stable fetch_download \
-    https://www.libsdl.org/release/SDL2-2.0.4.tar.gz \
-    da55e540bf6331824153805d58b590a29c39d2d506c6d02fa409aedeab21174b
+    https://www.libsdl.org/release/SDL2-2.0.10.tar.gz \
+    b4656c13a1f0d0023ae2f4a9cf08ec92fffb464e0f24238337784159b8b91d57
 variant latest fetch_hg https://hg.libsdl.org/SDL/
 
 config_options=
@@ -18,6 +18,11 @@ fi
 if [ $(uname) = "Cygwin" ] || [[ "$BUILD_HOST" = *mingw* ]]; then
     dependencies directx-devel
     config_options+=" --disable-directx"
+fi
+
+# Disable assembly to avoid depending on SIMD stuff.
+if [[ "$BUILD_HOST" = *-*-emscripten ]]; then
+    config_options+=" --disable-assembly"
 fi
 
 # For SDL, we do an out-of-tree build in a subdirectory, since the configure

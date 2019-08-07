@@ -3,7 +3,7 @@ build_autotools::init() {
     PACKAGE_CONFIGURE_OPTS="$@"
 }
 
-need_autoreconf() {
+build_autotools::need_autoreconf() {
     if [ -e configure.in ] && [ ! -e configure.ac ]; then
         local configure_ac=configure.in
     else
@@ -25,10 +25,10 @@ do_build() {
 
     # If we're checking out from a version control repository, we may need
     # to run the autotools commands first to generate the configure script.
-    if need_autoreconf; then
-        if ! have_tool autoreconf; then
-            error_exit "autotools not installed; please run:" \
-                       "    chocpkg install native:autotools"
+    if build_autotools::need_autoreconf; then
+        if ! chocpkg::have_tool autoreconf; then
+            chocpkg::abort "autotools not installed; please run:" \
+                           "    chocpkg install native:autotools"
         fi
 
         autoreconf -fi
@@ -42,11 +42,11 @@ do_build() {
 
     "$configure_path" --prefix="$PACKAGE_INSTALL_DIR" $host_opt \
                 $PACKAGE_CONFIGURE_OPTS || (
-        error_exit "Failed to configure package $PACKAGE_NAME for build."
+        chocpkg::abort "Failed to configure package $PACKAGE_NAME for build."
     )
 
     make $MAKE_OPTS || (
-        error_exit "Failed to build package $PACKAGE_NAME."
+        chocpkg::abort "Failed to build package $PACKAGE_NAME."
     )
 }
 
@@ -58,7 +58,7 @@ do_install() {
     fi
 
     make install || (
-        error_exit "Failed to install package $PACKAGE_NAME."
+        chocpkg::abort "Failed to install package $PACKAGE_NAME."
     )
 }
 

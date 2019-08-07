@@ -7,9 +7,9 @@ fetch_download::init() {
     IS_TAR_BOMB=false
 }
 
-check_sha256_digest() {
+fetch_download::check_sha256_digest() {
     local filename="$1" dldigest
-    dldigest=$(sha256_digest "$filename")
+    dldigest=$(chocpkg::sha256_digest "$filename")
     # For development purposes only.
     if [ "$PACKAGE_SHA256_DIGEST" = "ignore-checksum" ]; then
         echo "SHA256 digest of downloaded $PACKAGE_FILENAME:"
@@ -17,25 +17,25 @@ check_sha256_digest() {
         return
     fi
     if [ "$dldigest" != "$PACKAGE_SHA256_DIGEST" ]; then
-        error_exit "sha256 checksum incorrect for $PACKAGE_FILENAME." \
-                   "expected: $PACKAGE_SHA256_DIGEST" \
-                   "checksum: $dldigest"
+        chocpkg::abort "sha256 checksum incorrect for $PACKAGE_FILENAME." \
+                       "expected: $PACKAGE_SHA256_DIGEST" \
+                       "checksum: $dldigest"
     fi
 }
 
-download_package_file() {
+fetch_download::download_package_file() {
     local dlfile="$PACKAGES_DIR/$PACKAGE_FILENAME"
     if [ ! -e "$dlfile" ]; then
         local tmpfile="$dlfile.part"
-        if ! chocurl "$PACKAGE_URL" > $tmpfile; then
-            error_exit "Failed to download $PACKAGE_URL"
+        if ! chocpkg::curl "$PACKAGE_URL" > $tmpfile; then
+            chocpkg::abort "Failed to download $PACKAGE_URL"
         fi
-        check_sha256_digest "$tmpfile"
+        fetch_download::check_sha256_digest "$tmpfile"
         mv "$tmpfile" "$dlfile"
     fi
 }
 
-extract_package_file() {
+fetch_download::extract_package_file() {
     local dlfile="$PACKAGES_DIR/$PACKAGE_FILENAME"
     # Well-formed tar files contain a single directory that matches their
     # filename, but we support an override for badly-formed tar files too,
@@ -49,12 +49,12 @@ extract_package_file() {
     fi
     (gunzip < "$dlfile" | tar -x) || (
         mv "$dlfile" "$dlfile.bad"
-        error_exit "Failed to extract $PACKAGE_FILENAME: bad download?"
+        chocpkg::abort "Failed to extract $PACKAGE_FILENAME: bad download?"
     )
 }
 
 do_fetch() {
-    download_package_file
-    extract_package_file
+    fetch_download::download_package_file
+    fetch_download::extract_package_file
 }
 

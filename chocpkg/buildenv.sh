@@ -6,6 +6,10 @@ BUILD_HOST=
 # An example of how to cross-compile to mingw32 for Windows builds:
 #BUILD_HOST=i686-w64-mingw32
 
+# Build host to use for Emscripten builds. Uncomment and then run
+# `chocpkg install native:emscripten`.
+#BUILD_HOST=asmjs-local-emscripten
+
 # If we're cross-compiling to a different platform, this should be set
 # to true. We initialize this based on whether BUILD_HOST has been set.
 if [ "$BUILD_HOST" != "" ]; then
@@ -24,21 +28,24 @@ MAKE_OPTS=
 # requested. If a package name appears inside this array, the "latest"
 # variant of that package (ie. source control HEAD) is built instead.
 LATEST_PACKAGES=(restful-doom)
+#LATEST_PACKAGES+=(chocolate-doom)
 #LATEST_PACKAGES+=(SDL2 SDL2_image SDL2_mixer SDL2_net)
 
-# On OS X, we must set additional options: build 32-bit binaries, and the
-# target API version.
-if [ $(uname) = "Darwin" ]; then
-    CC="gcc -m32"
-    CXX="g++ -m32"
+if [[ "$BUILD_HOST" = "" ]] && [ $(uname) = "Darwin" ]; then
     LDFLAGS="-lobjc ${LDFLAGS:-}"
     MACOSX_DEPLOYMENT_TARGET=10.7
-    export CC CXX LDFLAGS MACOSX_DEPLOYMENT_TARGET
-
-    # Treat this like a cross-compile, since we're building 32-bit:
-    IS_CROSS_COMPILE=true
+    export LDFLAGS MACOSX_DEPLOYMENT_TARGET
+elif [[ "$BUILD_HOST" =~ mingw ]]; then
+    # MingW builds need the -static-libgcc option, otherwise we
+    # will depend on an unnecessary DLL, libgcc_s_sjlj-1.dll. Note that
+    # this specifically needs to be done via the CC environment variable
+    # rather than CFLAGS/LDFLAGS, otherwise libtool strips it out.
+    CC="${BUILD_HOST}-gcc -static-libgcc"
+    export CC
 else
-    # TODO: explain what this does
+    # Include $INSTALL_DIR/lib in the list of paths that is searched
+    # when looking for DLLs. This allows built binaries to be run
+    # without needing to set LD_LIBRARY_PATH every time.
     LDFLAGS="-Wl,-rpath -Wl,$INSTALL_DIR/lib ${LDFLAGS:-}"
     export LDFLAGS
 fi
